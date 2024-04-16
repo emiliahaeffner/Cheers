@@ -4,6 +4,9 @@
     "slug": "Cheers",
     "version": "1.0.0",
     "orientation": "portrait",
+    "permissions": ["CAMERA_ROLL"],
+    "platforms": ["ios", "android"],
+    "sdkVersion": "49.0.0",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -11,9 +14,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
