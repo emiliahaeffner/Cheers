@@ -28,6 +28,8 @@ const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-export { db, app, storage, auth };
+const cocktailrecipy = "cocktails";
+
+export { db, app, storage, auth, cocktailrecipy };
 
 //as default

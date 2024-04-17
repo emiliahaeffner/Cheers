@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -6,10 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import CalculatorScreen from "./components/CalculatorScreen";
 import SelectScreen from "./components/SelectScreen";
 import MapsScreen from "./components/MapsScreen";
-import ProfileScreen from "./components/ProfileScreen";
+import UserScreen from "./components/UserScreen";
 import ContactScreen from "./components/ContactScreen";
 import LoginScreen from "./components/LoginScreen";
 import CreateAccountScreen from "./components/CreateAccountScreen";
+import RecipeScreen from "./components/RecipeTabNavigator";
+import initializeCocktails from "./initializeCocktails";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,6 +25,10 @@ const App = () => {
   const [hobby, setHobby] = useState("");
   const [favoriteDrink, setFavoriteDrink] = useState("");
   const [profileImage, setProfileImage] = useState(null);
+
+  useEffect(() => {
+    initializeCocktails();
+  }, []);
 
   const handleUserId = (userCredential) => {
     const userId = userCredential.user.uid; // Initialize userId after successful login
@@ -92,6 +98,7 @@ const App = () => {
             />
           )}
         </Stack.Screen>
+        <Stack.Screen name="RecipeScreen" component={RecipeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -115,7 +122,7 @@ const MainTabNavigator = ({
 
         if (route.name === "Calculator") {
           iconName = focused ? "calculator" : "calculator-outline";
-        } else if (route.name === "Profile") {
+        } else if (route.name === "User") {
           iconName = focused ? "person" : "person-outline";
         } else if (route.name === "Contact") {
           iconName = focused ? "people" : "people-outline";
@@ -136,9 +143,9 @@ const MainTabNavigator = ({
     <Tab.Screen name="Contact">
       {(props) => <ContactScreen {...props} userId={userId} />}
     </Tab.Screen>
-    <Tab.Screen name="Profile">
+    <Tab.Screen name="User">
       {(props) => (
-        <ProfileScreen
+        <UserScreen
           {...props}
           userId={userId}
           email={email}
