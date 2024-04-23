@@ -1,14 +1,94 @@
-import React, { useState } from "react";
-import { useNavigation } from "@react-navigation/native";
-import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+// export default SelectScreen;
+import React, { useState, useEffect } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import * as Location from "expo-location";
+import { FirebaseAuth, FirebaseRTDB } from "../firebase";
+import { getDatabase, ref, set } from "firebase/database";
 
 const SelectScreen = () => {
   const [drinks, setDrinks] = useState([
-    { name: "Water", selected: false },
-    { name: "Tea", selected: false },
-    { name: "Coffee", selected: false },
-    // Add more drink options as needed
+    {
+      name: "Mocktail",
+      selected: false,
+      image: require("../pictures/Mocktail.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Tea",
+      selected: false,
+      image: require("../pictures/Tea.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Coffee",
+      selected: false,
+      image: require("../pictures/Coffee.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Beer",
+      selected: false,
+      image: require("../pictures/Beer.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Champagne",
+      selected: false,
+      image: require("../pictures/Champagne.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Drink",
+      selected: false,
+      image: require("../pictures/Drink.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Longdrink",
+      selected: false,
+      image: require("../pictures/Longdrink.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Magherita",
+      selected: false,
+      image: require("../pictures/Magherita.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Martini",
+      selected: false,
+      image: require("../pictures/Martini.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Slushy",
+      selected: false,
+      image: require("../pictures/Slushy.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Whisky",
+      selected: false,
+      image: require("../pictures/Whisky.png"),
+      style: styles.drinkImage,
+    },
+    {
+      name: "Wine",
+      selected: false,
+      image: require("../pictures/Mocktail.png"),
+      style: styles.drinkImage,
+    },
   ]);
 
   const timeOptions = [
@@ -22,12 +102,34 @@ const SelectScreen = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [drinkPickerVisible, setDrinkPickerVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [location, setLocation] = useState(null);
 
   const navigation = useNavigation();
 
   const handleNavigateToRecipes = () => {
     navigation.navigate("RecipeScreen");
   };
+
+  // Function to get the user's current location
+  const getLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission to access location was denied");
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    setLocation(location);
+  };
+
+  // Trigger getLocation when component mounts
+  useEffect(() => {
+    getLocation();
+  }, []);
+
+  useFocusEffect(() => {
+    getLocation();
+  });
 
   const selectDrink = (drink) => {
     const updatedDrinks = drinks.map((d) =>
@@ -46,56 +148,156 @@ const SelectScreen = () => {
     setTimePickerVisible(false);
   };
 
+  const saveDataToRealtimeDB = async () => {
+    try {
+      const user = FirebaseAuth.currentUser;
+
+      if (user) {
+        const currentDate = new Date();
+        const timestamp = currentDate.toISOString();
+
+        // const db = getDatabase(); // Initialize the Realtime Database instance
+
+        // Save data to Realtime Database
+        await set(ref(FirebaseRTDB, `select/${user.uid}`), {
+          userId: user.uid,
+          selectedDrink: selectedDrink ? selectedDrink.name : null, // Check if selectedDrink is not null
+          selectedTime: selectedTime,
+          location: location,
+          timestamp: timestamp,
+        });
+
+        setSelectedDrink(null);
+        setSelectedTime(null);
+        setLocation(null);
+
+        const updatedDrinks = drinks.map((drink) => ({
+          ...drink,
+          selected: false,
+        }));
+        setDrinks(updatedDrinks);
+
+        navigation.navigate("Maps", {
+          selectedDrink: selectedDrink ? selectedDrink.name : null, // Pass selectedDrink name if not null
+          location: location,
+        });
+      } else {
+        console.error("User is not authenticated.");
+        Alert.alert("Error", "User is not authenticated.");
+      }
+    } catch (error) {
+      console.error("Error saving data to Realtime Database:", error.message);
+      Alert.alert("Error saving data to Realtime Database:", error.message);
+    }
+  };
+
+  // const saveDataToRealtimeDB = async () => {
+  //   try {
+  //     const user = FirebaseAuth.currentUser;
+
+  //     if (user) {
+  //       const currentDate = new Date();
+  //       const timestamp = currentDate.toISOString();
+
+  //       // Save data to Realtime Database
+  //       // await FirebaseRTDB.ref(`select/${user.uid}`).set({
+  //       //   userId: user.uid,
+  //       //   selectedDrink: selectedDrink.name,
+  //       //   selectedTime: selectedTime,
+  //       //   location: location,
+  //       //   timestamp: timestamp,
+  //       // });
+
+  //       setSelectedDrink(null);
+  //       setSelectedTime(null);
+  //       setLocation(null);
+
+  //       const updatedDrinks = drinks.map((drink) => ({
+  //         ...drink,
+  //         selected: false,
+  //       }));
+  //       setDrinks(updatedDrinks);
+
+  //       navigation.navigate("Maps", {
+  //         selectedDrink: selectedDrink.name,
+  //         location: location,
+  //       });
+  //     } else {
+  //       console.error("User is not authenticated.");
+  //       Alert.alert("Error", "User is not authenticated.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error saving data to Realtime Database:", error.message);
+  //     Alert.alert("Error saving data to Realtime Database:", error.message);
+  //   }
+  // };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Select Your Drink</Text>
-      <View style={styles.optionsContainer}>
-        {drinks.map((drink, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.drinkOption,
-              drink.selected ? styles.selectedOption : null,
-            ]}
-            onPress={() => selectDrink(drink)}
-          >
-            {/* <Image source={drink.image} style={styles.drinkImage} /> */}
-            <Text style={styles.drinkName}>{drink.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <TouchableOpacity onPress={handleNavigateToRecipes}>
-        <Text>Go to Recipes</Text>
-      </TouchableOpacity>
-      <Text style={styles.title}>Select Drinking Time</Text>
-      <View style={styles.pickerContainer}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <View style={styles.optionsContainer}>
+          {drinks.map((drink, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.drinkOption,
+                drink.selected ? styles.selectedOption : null,
+              ]}
+              onPress={() => selectDrink(drink)}
+            >
+              <Image source={drink.image} style={styles.drinkImage} />
+              <Text style={styles.drinkName}>{drink.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         <TouchableOpacity
-          style={styles.selectedTime}
-          onPress={() => setTimePickerVisible(true)}
+          style={styles.button}
+          onPress={handleNavigateToRecipes}
         >
-          <Text>{selectedTime ? `${selectedTime} min` : "Select Time"}</Text>
+          <Text style={styles.buttonText}>Go to Recipes</Text>
         </TouchableOpacity>
-        {timePickerVisible && (
-          <Picker
-            selectedValue={selectedTime}
-            onValueChange={(itemValue) => selectTime(itemValue)}
-            style={styles.picker}
-          >
-            {timeOptions.map((option, index) => (
-              <Picker.Item
-                key={index}
-                label={option.label}
-                value={option.value}
-              />
-            ))}
-          </Picker>
-        )}
+        <View style={styles.timePickerContainer}>
+          <Text style={styles.title}>Select Drinking Time</Text>
+          <View style={styles.pickerButtonContainer}>
+            <TouchableOpacity
+              style={styles.selectedTime}
+              onPress={() => setTimePickerVisible(true)}
+            >
+              <Text style={styles.selectedTimeText}>
+                {selectedTime ? `${selectedTime} min` : "Select Time"}
+              </Text>
+            </TouchableOpacity>
+            {timePickerVisible && (
+              <Picker
+                selectedValue={selectedTime}
+                onValueChange={(itemValue) => selectTime(itemValue)}
+                style={styles.picker}
+              >
+                {timeOptions.map((option, index) => (
+                  <Picker.Item
+                    key={index}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
+            )}
+          </View>
+        </View>
+        <TouchableOpacity style={styles.button} onPress={saveDataToRealtimeDB}>
+          <Text style={styles.buttonText}>Add Drink</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   container: {
     flex: 1,
     alignItems: "center",
@@ -110,28 +312,44 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
   drinkOption: {
     alignItems: "center",
-    marginHorizontal: 10,
-    padding: 10,
+    marginHorizontal: 5,
+    marginBottom: 10,
+    width: "23%",
     borderRadius: 8,
   },
   drinkName: {
-    fontSize: 16,
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  drinkImage: {
+    width: 75,
+    height: 75,
+    // marginBottom: 5,
   },
   selectedOption: {
-    backgroundColor: "#6FCF97", // Change color to indicate selection
+    backgroundColor: "#6FCF97",
   },
-  pickerContainer: {
+  button: {
+    backgroundColor: "#6FCF97",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 35,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  timePickerContainer: {
     alignItems: "center",
-  },
-  picker: {
-    height: 50,
-    width: 200,
-    marginBottom: 20,
   },
   selectedTime: {
     height: 50,
@@ -140,8 +358,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    //marginBottom: 20,
     paddingHorizontal: 10,
+  },
+  selectedTimeText: {
+    fontSize: 16,
+  },
+  picker: {
+    height: 50,
+    width: 200,
+    marginBottom: 20,
+  },
+  pickerButtonContainer: {
+    marginBottom: 50, // Adjust this value as needed
   },
 });
 

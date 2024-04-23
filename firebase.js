@@ -8,6 +8,7 @@ import {
   initializeAuth,
   getReactNativePersistence,
 } from "firebase/auth";
+import { getDatabase } from "firebase/database"; // Import the database module
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
@@ -18,6 +19,8 @@ const firebaseConfig = {
   messagingSenderId: "579054527462",
   appId: "1:579054527462:web:6b1325fa4246f6b4206c27",
   measurementId: "G-RXBXJ0Z07X",
+  databaseURL:
+    "https://cheers-app-fe0c6-default-rtdb.europe-west1.firebasedatabase.app/", // Update with your database URL
 };
 
 // Initialize Firebase
@@ -30,6 +33,7 @@ const auth = initializeAuth(app, {
 
 const cocktailrecipy = "cocktails";
 
-export { db, app, storage, auth, cocktailrecipy };
+const FirebaseAuth = getAuth(app);
+const FirebaseRTDB = getDatabase(app);
 
-//as default
+export { db, app, storage, auth, cocktailrecipy, FirebaseAuth, FirebaseRTDB };
