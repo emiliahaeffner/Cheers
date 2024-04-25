@@ -34,6 +34,6 @@ const auth = initializeAuth(app, {
 const cocktailrecipy = "cocktails";
 
 const FirebaseAuth = getAuth(app);
-const FirebaseRTDB = getDatabase(app);
+const FirebaseRTDB = getDatabase();
 
 export { db, app, storage, auth, cocktailrecipy, FirebaseAuth, FirebaseRTDB };

@@ -13,7 +13,7 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import * as Location from "expo-location";
 import { FirebaseAuth, FirebaseRTDB } from "../firebase";
-import { getDatabase, ref, set } from "firebase/database";
+import { ref, set } from "firebase/database";
 
 const SelectScreen = () => {
   const [drinks, setDrinks] = useState([
@@ -110,16 +110,21 @@ const SelectScreen = () => {
     navigation.navigate("RecipeScreen");
   };
 
-  // Function to get the user's current location
   const getLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Permission to access location was denied");
+      setLocationPermission(false);
       return;
     }
 
-    let location = await Location.getCurrentPositionAsync({});
-    setLocation(location);
+    try {
+      let locationData = await Location.getCurrentPositionAsync({});
+      setLocation(locationData.coords); // Update location with coordinates
+    } catch (error) {
+      console.error("Error getting location:", error.message);
+      Alert.alert("Error", "Failed to get location");
+    }
   };
 
   // Trigger getLocation when component mounts
@@ -127,9 +132,9 @@ const SelectScreen = () => {
     getLocation();
   }, []);
 
-  useFocusEffect(() => {
-    getLocation();
-  });
+  // useFocusEffect(() => {
+  //   getLocation();
+  // });
 
   const selectDrink = (drink) => {
     const updatedDrinks = drinks.map((d) =>
@@ -147,40 +152,28 @@ const SelectScreen = () => {
     setSelectedTime(time);
     setTimePickerVisible(false);
   };
-
   const saveDataToRealtimeDB = async () => {
     try {
       const user = FirebaseAuth.currentUser;
 
       if (user) {
-        const currentDate = new Date();
-        const timestamp = currentDate.toISOString();
-
-        // const db = getDatabase(); // Initialize the Realtime Database instance
-
         // Save data to Realtime Database
         await set(ref(FirebaseRTDB, `select/${user.uid}`), {
           userId: user.uid,
-          selectedDrink: selectedDrink ? selectedDrink.name : null, // Check if selectedDrink is not null
+          selectedDrink: selectedDrink ? selectedDrink.name : null,
           selectedTime: selectedTime,
-          location: location,
-          timestamp: timestamp,
+          location: location, // Update to use the location state
+
+          timestamp: new Date().toISOString(),
         });
 
+        console.log(location);
+
+        // Reset selections and navigate
         setSelectedDrink(null);
         setSelectedTime(null);
         setLocation(null);
-
-        const updatedDrinks = drinks.map((drink) => ({
-          ...drink,
-          selected: false,
-        }));
-        setDrinks(updatedDrinks);
-
-        navigation.navigate("Maps", {
-          selectedDrink: selectedDrink ? selectedDrink.name : null, // Pass selectedDrink name if not null
-          location: location,
-        });
+        navigation.navigate("Maps", { location: location });
       } else {
         console.error("User is not authenticated.");
         Alert.alert("Error", "User is not authenticated.");
@@ -284,7 +277,14 @@ const SelectScreen = () => {
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.button} onPress={saveDataToRealtimeDB}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (!selectedDrink || !selectedTime) && styles.disabledButton,
+          ]}
+          onPress={saveDataToRealtimeDB}
+          disabled={!selectedDrink || !selectedTime}
+        >
           <Text style={styles.buttonText}>Add Drink</Text>
         </TouchableOpacity>
       </View>
@@ -371,6 +371,10 @@ const styles = StyleSheet.create({
   },
   pickerButtonContainer: {
     marginBottom: 50, // Adjust this value as needed
+  },
+  disabledButton: {
+    backgroundColor: "#ccc", // You can change this color to visually indicate the disabled state
+    // Any other styles you want to apply to the disabled button
   },
 });
 
